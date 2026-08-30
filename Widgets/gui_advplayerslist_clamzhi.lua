@@ -391,16 +391,18 @@ local prevClickTime = osClock()
 --   reorder.buttonRect : { x0, y0, x1, y1 } SCREEN coords for the autosort button, or nil
 --   reorder.threshold  : px of travel before a Ctrl-press becomes a drag
 --   reorder.suggest    : cached map recommended-start-positions (array of sides) / false / nil=unloaded
---   reorder.showPosNames : bool - show recommended-position labels instead of player names
---   reorder.slotLabel  : teamID -> position label string (for showPosNames)
+--   reorder.nameMode   : 0 = player names, 1 = position labels, 2 = "<2-letter code> username"
+--   reorder.slotLabel  : teamID -> position label string  (mode 1)
+--   reorder.slotShort  : teamID -> 2-letter position code  (mode 2)
 WG.aplc = {
 	order = {},
 	drag = nil,
 	buttonRect = nil,
 	threshold = 4,
 	suggest = nil,
-	showPosNames = false,
+	nameMode = 0,
 	slotLabel = nil,
+	slotShort = nil,
 }
 
 -- Cached font scale factors (only depend on vsy, updated in ViewResize)
@@ -756,6 +758,11 @@ function SetMaxPlayerNameWidth()
 		end
 	end
 
+	-- [CUSTOM] name mode 2 prefixes "<2 letters> " to each name
+	if WG.aplc and WG.aplc.nameMode == 2 then
+		maxWidth = maxWidth + 14 * (font2 and font2:GetTextWidth("WW ") or 3)
+	end
+
 	return maxWidth
 end
 
@@ -1063,7 +1070,8 @@ function widget:Initialize()
 	WG.aplc.drag = nil
 	WG.aplc.suggest = nil
 	WG.aplc.slotLabel = nil
-	WG.aplc.showPosNames = false
+	WG.aplc.slotShort = nil
+	WG.aplc.nameMode = 0
 	InitializePlayers()
 	GetAliveAllyTeams()
 	SortList()
@@ -1125,8 +1133,8 @@ function widget:Initialize()
 		AutosortByPosition()
 		return true
 	end, nil, "p")
-	widgetHandler:AddAction("advplayerlist_toggle_position_names", function()
-		TogglePositionNames()
+	widgetHandler:AddAction("advplayerlist_cycle_name_mode", function()
+		CycleNameMode()
 		return true
 	end, nil, "p")
 	widgetHandler:AddAction("advplayerlist_startpos_dump", function()
@@ -1823,7 +1831,8 @@ end
 -- Per-map "layout profile", matched by the exact ordered sequence of roles in the
 -- recommendation data (so it's map-name independent and self-validating).
 --   profile.rank[nativeSlot]   -> desired position in the list (1 = top)
---   profile.labels[nativeSlot] -> label to show in position-name mode
+--   profile.labels[nativeSlot] -> full label   (name mode 1)
+--   profile.short[nativeSlot]  -> 2-letter code (name mode 2, shown before the username)
 -- nativeSlot = index of the start in the recommendation's ordered list.
 function StartposProfile(roles)
 	-- Supreme Isthmus, 8 players per team. Native order (as listed by the map):
@@ -1840,6 +1849,16 @@ function StartposProfile(roles)
 				[1] = "Sea Geo",
 				[2] = "Eco",
 				[3] = "Air",
+			},
+			short = {
+				[5] = "F1",
+				[6] = "F2",
+				[4] = "PO",
+				[7] = "GE",
+				[8] = "SB",
+				[1] = "SG",
+				[2] = "EC",
+				[3] = "AI",
 			},
 		}
 	end
@@ -1922,18 +1941,24 @@ function SuggestedSlots(allyTeamID)
 	return best, rank, profile
 end
 
--- Fill WG.aplc.slotLabel[teamID] for the given ranked teams (profile label, else role).
+-- Fill WG.aplc.slotLabel / slotShort for the given ranked teams.
 function ApplySlotLabels(best, rank, profile)
 	WG.aplc.slotLabel = WG.aplc.slotLabel or {}
+	WG.aplc.slotShort = WG.aplc.slotShort or {}
 	for t, r in pairs(rank) do
-		WG.aplc.slotLabel[t] = (profile and profile.labels[r.slot]) or best[r.slot].role
+		local role = best[r.slot].role
+		WG.aplc.slotLabel[t] = (profile and profile.labels[r.slot]) or role
+		WG.aplc.slotShort[t] = (profile and profile.short and profile.short[r.slot])
+			or (role and tostring(role):sub(1, 2):upper())
+			or nil
 	end
 end
 
--- Recompute WG.aplc.slotLabel for my ally team (or all, when spectating) without
--- touching the row order. Used when toggling position-name mode on.
+-- Recompute WG.aplc.slotLabel / slotShort for my ally team (or all, when
+-- spectating) without touching the row order. Used when switching name mode.
 function RefreshSlotLabels()
 	WG.aplc.slotLabel = {}
+	WG.aplc.slotShort = {}
 	local ats = mySpecStatus and sp.GetAllyTeamList() or { myAllyTeamID }
 	for _, at in ipairs(ats) do
 		local best, rank, profile = SuggestedSlots(at)
@@ -2038,7 +2063,7 @@ function AutosortByPosition()
 		changed = true
 	end
 	if changed then
-		if WG.aplc.showPosNames then
+		if WG.aplc.nameMode > 0 then
 			RefreshSlotLabels()
 		end
 		SortList()
@@ -2049,15 +2074,17 @@ function AutosortByPosition()
 	return changed
 end
 
--- Toggle showing recommended-position labels instead of player names.
-function TogglePositionNames()
-	WG.aplc.showPosNames = not WG.aplc.showPosNames
-	if WG.aplc.showPosNames then
+-- Cycle the name display: 0 = player names, 1 = position labels, 2 = "<code> username".
+function CycleNameMode()
+	WG.aplc.nameMode = ((WG.aplc.nameMode or 0) + 1) % 3
+	if WG.aplc.nameMode > 0 then
 		RefreshSlotLabels()
 	end
 	SortList()
+	SetModulesPositionX() -- name column width depends on the mode
 	CreateLists()
-	Spring.Echo("[ClamZhi AdvPlayersList] position names " .. (WG.aplc.showPosNames and "ON" or "OFF"))
+	local names = { [0] = "player names", [1] = "position labels", [2] = "code + username" }
+	Spring.Echo("[ClamZhi AdvPlayersList] name display: " .. names[WG.aplc.nameMode])
 end
 
 function SortList()
@@ -2550,11 +2577,13 @@ function DrawAutosortButton()
 	RectRound(bx0, by0, bx1, by1, 2 * (apiAbsPosition[5] or 1), 1, 1, 1, 1,
 		{ 0.1, 0.1, 0.1, a }, { 0.33, 0.33, 0.33, a })
 
-	-- 3-bar "sort" glyph (tinted green while position-name mode is on)
+	-- 3-bar "sort" glyph, tinted by name-display mode (0 grey, 1 green, 2 cyan)
 	gl_Texture(false)
 	local g = hover and 1 or 0.85
-	if WG.aplc.showPosNames then
+	if WG.aplc.nameMode == 1 then
 		gl_Color(0.45 * g, g, 0.5 * g, 1)
+	elseif WG.aplc.nameMode == 2 then
+		gl_Color(0.4 * g, 0.9 * g, g, 1)
 	else
 		gl_Color(g, g, g, 1)
 	end
@@ -3884,11 +3913,17 @@ function DrawName(name, nameIsAlias, team, posY, dark, playerID, accountID, desy
 	end
 	nameText = nameText .. willSub
 
-	-- [CUSTOM] position-name mode: show the recommended-position label instead of the name
-	if WG.aplc.showPosNames and team and WG.aplc.slotLabel then
+	-- [CUSTOM] name display modes: 1 = recommended-position label, 2 = "<code> username"
+	local nameMode = WG.aplc.nameMode
+	if nameMode == 1 and team and WG.aplc.slotLabel then
 		local lbl = WG.aplc.slotLabel[team]
 		if lbl then
 			nameText = " " .. lbl
+		end
+	elseif nameMode == 2 and team and WG.aplc.slotShort then
+		local code = WG.aplc.slotShort[team]
+		if code then
+			nameText = " " .. code .. " " .. name
 		end
 	end
 
@@ -4581,11 +4616,11 @@ function widget:MousePress(x, y, button)
 		forceMainListRefresh = true
 	end
 
-	-- [CUSTOM] right-click the autosort button: toggle position-name display
+	-- [CUSTOM] right-click the autosort button: cycle the name display mode
 	if button == 3 then
 		local btn = WG.aplc.buttonRect
 		if btn and x >= btn[1] and x <= btn[3] and y >= btn[2] and y <= btn[4] then
-			TogglePositionNames()
+			CycleNameMode()
 			return true
 		end
 	end

@@ -16,9 +16,11 @@ adds ways to control the order of the player list:
   recommended start positions** (the same data the *Start Position Suggestions*
   widget draws). On maps with no recommendation data it falls back to sorting by
   where teammates actually spawned, west→east / north→south.
-- **Right‑click the sort button** to toggle **position‑name display** — player
-  names are replaced with the recommended position label (e.g. `Front 1`, `Pond`,
-  `Sea Geo`). The button glyph turns green while this mode is on.
+- **Right‑click the sort button** to cycle the **name display**:
+  1. player names (default)
+  2. recommended position label instead of the name (e.g. `Front 1`, `Pond`,
+     `Sea Geo`) — glyph turns green
+  3. 2‑letter position code + the username (e.g. `F1 SomePlayer`) — glyph turns cyan
 
 Per‑map slot orders and position labels live in `StartposProfile()` in the widget
 file. A profile is matched by the exact sequence of position *roles* in the map's
@@ -30,7 +32,7 @@ Actions (bind with `/bind <key> <action>`):
 | Action | Effect |
 | --- | --- |
 | `advplayerlist_autosort_by_position` | Same as the sort button |
-| `advplayerlist_toggle_position_names` | Toggle position‑name display |
+| `advplayerlist_cycle_name_mode` | Cycle name display (names → labels → code+name) |
 | `advplayerlist_startpos_dump` | Print the loaded recommendation slots to the console (for adding new map profiles) |
 
 ## Install
