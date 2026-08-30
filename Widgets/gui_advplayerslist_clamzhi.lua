@@ -1843,7 +1843,8 @@ end
 -- recommendation data (so it's map-name independent and self-validating).
 --   profile.rank[nativeSlot]   -> desired position in the list (1 = top)
 --   profile.labels[nativeSlot] -> full label   (name mode 1)
---   profile.short[nativeSlot]  -> 2-letter code (name mode 2, shown before the username)
+--   profile.icon[nativeSlot]   -> compact symbol shown before the username (name mode 2)
+--   profile.short[nativeSlot]  -> 2-letter fallback if icon glyphs don't render
 -- nativeSlot = index of the start in the recommendation's ordered list.
 function StartposProfile(roles)
 	-- Supreme Isthmus, 8 players per team. Native order (as listed by the map):
@@ -1860,6 +1861,16 @@ function StartposProfile(roles)
 				[1] = "Sea Geo",
 				[2] = "Eco",
 				[3] = "Air",
+			},
+			icon = {
+				[5] = "\226\154\148" .. "1", -- crossed swords + 1
+				[6] = "\226\154\148" .. "2", -- crossed swords + 2
+				[4] = "\226\137\136", -- almost-equal (water)
+				[7] = "\226\153\168", -- hot springs (geothermal)
+				[8] = "\226\155\177", -- umbrella on ground (beach)
+				[1] = "\226\154\147", -- anchor (sea)
+				[2] = "\226\154\153", -- gear (eco)
+				[3] = "\226\156\136", -- airplane (air)
 			},
 			short = {
 				[5] = "F1",
@@ -1953,13 +1964,16 @@ function SuggestedSlots(allyTeamID)
 end
 
 -- Fill WG.aplc.slotLabel / slotShort for the given ranked teams.
+-- slotShort prefers the profile's icon glyph, then its 2-letter code, then the
+-- role's first two letters.
 function ApplySlotLabels(best, rank, profile)
 	WG.aplc.slotLabel = WG.aplc.slotLabel or {}
 	WG.aplc.slotShort = WG.aplc.slotShort or {}
 	for t, r in pairs(rank) do
 		local role = best[r.slot].role
 		WG.aplc.slotLabel[t] = (profile and profile.labels[r.slot]) or role
-		WG.aplc.slotShort[t] = (profile and profile.short and profile.short[r.slot])
+		WG.aplc.slotShort[t] = (profile and profile.icon and profile.icon[r.slot])
+			or (profile and profile.short and profile.short[r.slot])
 			or (role and tostring(role):sub(1, 2):upper())
 			or nil
 	end
