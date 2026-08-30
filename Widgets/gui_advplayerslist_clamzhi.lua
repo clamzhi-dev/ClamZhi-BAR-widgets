@@ -1863,14 +1863,14 @@ function StartposProfile(roles)
 				[3] = "Air",
 			},
 			icon = {
-				[5] = "\226\154\148" .. "1", -- crossed swords + 1
-				[6] = "\226\154\148" .. "2", -- crossed swords + 2
-				[4] = "\226\137\136", -- almost-equal (water)
-				[7] = "\226\153\168", -- hot springs (geothermal)
-				[8] = "\226\155\177", -- umbrella on ground (beach)
-				[1] = "\226\154\147", -- anchor (sea)
-				[2] = "\226\154\153", -- gear (eco)
-				[3] = "\226\156\136", -- airplane (air)
+				[5] = "\226\154\148" .. "1", -- crossed swords + 1 (Front 1)
+				[6] = "\240\159\155\161" .. "2", -- shield + 2 (Front 2)
+				[4] = "\240\159\146\167", -- droplet (Pond)
+				[7] = "\226\153\168", -- hot springs (Geo)
+				[8] = "\226\155\177", -- umbrella on ground (Sea Beach)
+				[1] = "\226\154\147", -- anchor (Sea Geo)
+				[2] = "\226\154\153", -- gear (Eco)
+				[3] = "\226\156\136", -- airplane (Air)
 			},
 			short = {
 				[5] = "F1",
