@@ -2547,7 +2547,7 @@ function widget:DrawScreen()
 	gl.Blending(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA)
 
 	-- [CUSTOM: autosort] "sort list by battlefield position" button.
-	-- Drawn in screen space, anchored to the panel's top-right corner (just outside
+	-- Drawn in screen space, anchored to the panel's top-left corner (just outside
 	-- the top edge, or inside if the panel is flush with the screen top).
 	-- Shown while hovering the list or before the game starts.
 	DrawAutosortButton()
@@ -2564,15 +2564,15 @@ function DrawAutosortButton()
 	end
 
 	local s = mathFloor(15 * (apiAbsPosition[5] or 1) + 0.5)
-	local right = apiAbsPosition[4]
+	local left = apiAbsPosition[2]
 	local top = apiAbsPosition[1]
-	local bx1 = right
-	local bx0 = bx1 - s
+	local bx0 = left
+	local bx1 = bx0 + s
 	local by0, by1
-	if top + s <= vsy then -- room above the panel: attach the button to the top-right, flush
+	if top + s <= vsy then -- room above the panel: attach the button to the top-left, flush
 		by0 = top
 		by1 = by0 + s
-	else -- panel is at the screen top: put it inside the top-right corner
+	else -- panel is at the screen top: put it inside the top-left corner
 		by1 = top
 		by0 = by1 - s
 	end
