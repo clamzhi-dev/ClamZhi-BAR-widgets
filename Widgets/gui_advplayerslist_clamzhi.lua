@@ -1863,8 +1863,8 @@ function StartposProfile(roles)
 				[3] = "Air",
 			},
 			icon = {
-				[5] = "\226\154\148" .. "1", -- crossed swords + 1 (Front 1)
-				[6] = "\240\159\155\161" .. "2", -- shield + 2 (Front 2)
+				[5] = "\226\154\148", -- crossed swords (Front 1)
+				[6] = "\240\159\155\161", -- shield (Front 2)
 				[4] = "\240\159\146\167", -- droplet (Pond)
 				[7] = "\226\153\168", -- hot springs (Geo)
 				[8] = "\226\155\177", -- umbrella on ground (Sea Beach)
