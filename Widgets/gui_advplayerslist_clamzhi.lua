@@ -1066,12 +1066,12 @@ function widget:Initialize()
 
 	GeometryChange()
 	SetSidePics()
-	WG.aplc.order = {} -- [CUSTOM] clear manual ordering on (re)load
+	WG.aplc.order = {} -- [CUSTOM] clear per-match state on (re)load (nameMode persists via config)
 	WG.aplc.drag = nil
 	WG.aplc.suggest = nil
 	WG.aplc.slotLabel = nil
 	WG.aplc.slotShort = nil
-	WG.aplc.nameMode = 0
+	WG.aplc.autoSorted = nil
 	InitializePlayers()
 	GetAliveAllyTeams()
 	SortList()
@@ -1174,6 +1174,17 @@ function widget:GameFrame(n)
 			-- when PvE: rank players inside each team based on production and damage dealt
 			if isPvE and not isSinglePlayer and n % 250 == 1 then
 				rankTeamPlayers()
+			end
+		end
+
+		-- [CUSTOM] auto-sort by recommended start positions ~1s after game start
+		-- (once start positions have settled), and refresh position-name labels
+		if n >= 30 and not WG.aplc.autoSorted then
+			WG.aplc.autoSorted = true
+			local changed = AutosortByPosition()
+			if not changed and WG.aplc.nameMode > 0 then
+				RefreshSlotLabels()
+				CreateLists()
 			end
 		end
 	end
@@ -5190,6 +5201,7 @@ function widget:GetConfigData()
 			absoluteResbarValues = absoluteResbarValues,
 			originalColourNames = originalColourNames,
 			version = version,
+			clamzhi_nameMode = WG.aplc and WG.aplc.nameMode or 0, -- [CUSTOM] persist name display mode
 		}
 
 		return settings
@@ -5197,6 +5209,10 @@ function widget:GetConfigData()
 end
 
 function widget:SetConfigData(data)
+	if data.clamzhi_nameMode ~= nil and WG.aplc then -- [CUSTOM] restore persisted name display mode
+		WG.aplc.nameMode = data.clamzhi_nameMode
+	end
+
 	if data.customScale ~= nil then
 		customScale = data.customScale
 	end

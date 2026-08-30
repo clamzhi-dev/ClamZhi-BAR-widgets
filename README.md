@@ -16,11 +16,14 @@ adds ways to control the order of the player list:
   recommended start positions** (the same data the *Start Position Suggestions*
   widget draws). On maps with no recommendation data it falls back to sorting by
   where teammates actually spawned, west→east / north→south.
-- **Right‑click the sort button** to cycle the **name display**:
+- **Right‑click the sort button** to cycle the **name display** (the chosen mode
+  is remembered between games):
   1. player names (default)
   2. recommended position label instead of the name (e.g. `Front 1`, `Pond`,
      `Sea Geo`) — glyph turns green
   3. 2‑letter position code + the username (e.g. `F1 SomePlayer`) — glyph turns cyan
+- The list is **sorted automatically ~1 second after the game starts**, once
+  everyone's start position is known.
 
 Per‑map slot orders and position labels live in `StartposProfile()` in the widget
 file. A profile is matched by the exact sequence of position *roles* in the map's
