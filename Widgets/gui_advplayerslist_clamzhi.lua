@@ -1128,19 +1128,42 @@ function widget:Initialize()
 	end
 
 	widgetHandler:AddAction("speclist", speclistCmd, nil, "t")
-	-- [CUSTOM: autosort] bind keys with: /bind <key> <action>
+	-- [CUSTOM] type "tp" = works both as a /chat command and as a bindable key.
 	widgetHandler:AddAction("advplayerlist_autosort_by_position", function()
 		AutosortByPosition()
 		return true
-	end, nil, "p")
+	end, nil, "tp")
 	widgetHandler:AddAction("advplayerlist_cycle_name_mode", function()
 		CycleNameMode()
 		return true
-	end, nil, "p")
+	end, nil, "tp")
 	widgetHandler:AddAction("advplayerlist_startpos_dump", function()
 		DumpStartSuggestions()
 		return true
-	end, nil, "p")
+	end, nil, "tp")
+	-- toggle the OS/TrueSkill and eco-income columns (off by default in vanilla)
+	widgetHandler:AddAction("advplayerlist_toggle_skill", function()
+		ToggleColumn("skill")
+		return true
+	end, nil, "tp")
+	widgetHandler:AddAction("advplayerlist_toggle_income", function()
+		ToggleColumn("income")
+		return true
+	end, nil, "tp")
+end
+
+-- [CUSTOM] flip a column module on/off and rebuild the list
+function ToggleColumn(name)
+	for _, module in pairs(modules) do
+		if module.name == name then
+			module.active = not module.active
+			SortList()
+			SetModulesPositionX()
+			CreateLists()
+			Spring.Echo("[ClamZhi AdvPlayersList] " .. name .. " column " .. (module.active and "ON" or "OFF"))
+			return
+		end
+	end
 end
 
 function widget:GameOver(winningAllyTeams)
