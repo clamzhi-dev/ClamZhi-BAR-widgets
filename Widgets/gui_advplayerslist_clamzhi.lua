@@ -519,7 +519,7 @@ m_skill = {
 	name = "skill",
 	spec = true,
 	play = true,
-	active = false,
+	active = true, -- [CUSTOM] OS/TrueSkill column on by default (vanilla: false)
 	width = 18,
 	position = position,
 	posX = 0,
@@ -570,7 +570,7 @@ m_income = {
 	name = "income",
 	spec = true,
 	play = true,
-	active = false,
+	active = true, -- [CUSTOM] eco-income column on by default (vanilla: false)
 	width = 28,
 	position = position,
 	posX = 0,
@@ -5205,7 +5205,7 @@ end
 --  Save/load
 ---------------------------------------------------------------------------------------------------
 
-local version = 1
+local version = 2
 function widget:GetConfigData()
 	-- save
 	if m_name ~= nil then
@@ -5335,8 +5335,13 @@ function widget:SetConfigData(data)
 		end
 	end
 
-	if not data.hasresetskill then
-		m_skill.active = false
+	-- [CUSTOM] this fork defaults the OS/TrueSkill, eco-income and metal/energy
+	-- columns to ON. Force them on for configs saved before v2 (one-time: from
+	-- then on GetConfigData persists whatever the user sets).
+	if not data.version or data.version < 2 then
+		m_skill.active = true
+		m_income.active = true
+		m_resources.active = true
 	end
 
 	SetModulesPositionX()
